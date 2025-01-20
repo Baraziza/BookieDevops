@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: bookie_db
+      MYSQL_USER: bookie_user
+      MYSQL_PASSWORD: bookie_pass
+    ports:
+      - "3306:3306"
+    healthcheck: 
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - mysql_data:/var/lib/mysql 
+
+  web:
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy 
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    command: ["python", "run.py"]
+
+volumes:
+  mysql_data:  

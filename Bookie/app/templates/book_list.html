@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bookie! Add a book</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>My Bookie</h1>
+    <a href="{{ url_for('app.add_book') }}"><button>Add a new book</button></a>
+    <ul>
+        {% for book in books %}
+            <li>
+                {{ book.title }} by {{ book.author }} - {{ book.status }}
+                {% if book.status == "To Read" %}
+                    <a href="{{ url_for('app.mark_as_read', book_id=book.id) }}"><button>Mark as Read</button></a>
+                {% endif %}
+                <a href="{{ url_for('app.delete_book', book_id=book.id) }}"><button style="background-color:red;">Delete</button></a>  <!-- ✅ DELETE BUTTON -->
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

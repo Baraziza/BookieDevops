@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookie
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookie
+  template:
+    metadata:
+      labels:
+        app: bookie
+    spec:
+      initContainers:
+        - name: wait-for-mysql
+          image: mysql:5.7
+          command: ['sh', '-c', 'until mysql -h mysql -u bookie_user -pbookie_pass bookie_db -e "SELECT 1"; do echo waiting for mysql; sleep 2; done;']
+      containers:
+        - name: bookie
+          image: baraziza/bookie:latest
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 5000
+          env:
+            - name: FLASK_ENV
+              value: "development"
+            - name: DATABASE_URL
+              value: "mysql+pymysql://bookie_user:bookie_pass@mysql/bookie_db"
