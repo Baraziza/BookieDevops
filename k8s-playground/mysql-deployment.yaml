@@ -6,6 +6,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: ebs-sc
   resources:
     requests:
       storage: 1Gi
@@ -27,6 +28,13 @@ spec:
       labels:
         app: mysql
     spec:
+      initContainers:
+        - name: init-mysql
+          image: mysql:5.7
+          command: ['sh', '-c', 'rm -rf /var/lib/mysql/* && chown -R 999:999 /var/lib/mysql']
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-storage
       containers:
         - name: mysql
           image: mysql:5.7
@@ -51,6 +59,32 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/mysql
               name: mysql-storage
+          readinessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -u
+                - root
+                - -prootpass
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          startupProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+                - -u
+                - root
+                - -prootpass
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
       volumes:
         - name: mysql-storage
           persistentVolumeClaim:
