@@ -5,7 +5,7 @@ mysql:
   user: bookie_user
   password: bookie_pass
   storage:
-    storageClass: gp2
+    storageClass: ebs-sc
     size: 10Gi
 
 bookie:

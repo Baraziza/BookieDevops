@@ -36,14 +36,19 @@ spec:
       initContainers:
         - name: wait-for-mysql
           image: mysql:5.7
-          resources:
-            limits:
-              cpu: "200m"
-              memory: "128Mi"
-            requests:
-              cpu: "100m"
-              memory: "64Mi"
-          command: ['sh', '-c', 'until nc -z mysql 3306; do echo waiting for mysql; sleep 2; done;']
+          command:
+            - sh
+            - -c
+            - |
+              until mysqladmin ping -h mysql -u"${MYSQL_USER}" -p"${MYSQL_PASSWORD}" --silent; do
+                echo "waiting for mysql"
+                sleep 2
+              done
+          env:
+            - name: MYSQL_USER
+              value: {{ .Values.mysql.user }}
+            - name: MYSQL_PASSWORD
+              value: {{ .Values.mysql.password }}
       containers:
         - name: bookie
           image: {{ .Values.bookie.image }}

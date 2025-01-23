@@ -23,6 +23,30 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "eks_cluster_ebs_policy" {
+  role       = aws_iam_role.eks_cluster_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+# Add inline policy for OIDC provider
+resource "aws_iam_role_policy" "eks_cluster_oidc" {
+  name = "${var.cluster_name}-eks-cluster-oidc"
+  role = aws_iam_role.eks_cluster_role.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sts:AssumeRoleWithWebIdentity"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # IAM Role for EKS Worker Nodes
 resource "aws_iam_role" "eks_node_role" {
   name = "${var.cluster_name}-eks-node-role"
@@ -58,6 +82,10 @@ resource "aws_iam_role_policy_attachment" "eks_ec2_container_registry_policy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
+resource "aws_iam_role_policy_attachment" "eks_node_ebs_policy" {
+  role       = aws_iam_role.eks_node_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
 
 # EBS CSI Driver Role
 data "aws_caller_identity" "current" {}

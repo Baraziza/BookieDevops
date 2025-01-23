@@ -15,6 +15,10 @@ spec:
         app: mysql
     spec:
       terminationGracePeriodSeconds: 60
+      securityContext:
+        fsGroup: 999
+        runAsUser: 0
+        runAsGroup: 0
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -28,12 +32,26 @@ spec:
       - effect: NoSchedule
         key: node.kubernetes.io/not-ready
         operator: Exists
-      securityContext:
-        fsGroup: 999
       containers:
         - name: mysql
           image: {{ .Values.mysql.image }}
           imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+          command:
+            - bash
+            - -c
+            - |
+              set -ex
+              rm -rf /var/lib/mysql/*
+              chown -R 999:999 /var/lib/mysql
+              chmod 777 /var/lib/mysql
+              gosu mysql docker-entrypoint.sh mysqld \
+                --skip-name-resolve \
+                --max-connections=1000 \
+                --max-allowed-packet=32M
           resources:
             limits:
               cpu: "1"

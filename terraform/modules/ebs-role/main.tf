@@ -12,7 +12,7 @@ resource "aws_iam_role" "ebs_csi_driver" {
       }
       Action = "sts:AssumeRoleWithWebIdentity"
       Condition = {
-        StringLike = {
+        StringEquals = {
           "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:sub": "system:serviceaccount:kube-system:ebs-csi-controller-sa",
           "${replace(var.oidc_provider_arn, "arn:aws:iam::[0-9]+:oidc-provider/", "")}:aud": "sts.amazonaws.com"
         }

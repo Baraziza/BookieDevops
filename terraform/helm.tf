@@ -105,7 +105,44 @@ resource "null_resource" "delete_load_balancer" {
       KUBECONFIG = "~/.kube/config"
     }
   }
-} 
+}
+
+resource "helm_release" "aws_ebs_csi_driver" {
+  name             = "aws-ebs-csi-driver"
+  namespace        = "kube-system"
+  repository       = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
+  chart            = "aws-ebs-csi-driver"
+  version          = "2.25.0"
+
+  values = [
+    <<-EOT
+    controller:
+      serviceAccount:
+        create: true
+        name: ebs-csi-controller-sa
+        annotations:
+          eks.amazonaws.com/role-arn: ${module.oidc.ebs_csi_driver_trust_role_arn}
+          eks.amazonaws.com/audience: "sts.amazonaws.com"
+          eks.amazonaws.com/token-expiration: "86400"
+      extraVolumeTags:
+        Environment: dev
+        Terraform: "true"
+    EOT
+  ]
+
+  depends_on = [module.eks]
+}
+
+resource "kubernetes_storage_class" "ebs_sc" {
+  metadata {
+    name = "ebs-sc"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+  volume_binding_mode = "WaitForFirstConsumer"
+  depends_on = [
+    helm_release.aws_ebs_csi_driver
+  ]
+}
 
 resource "helm_release" "bookie" {
   name             = "bookie"
@@ -121,7 +158,7 @@ resource "helm_release" "bookie" {
     <<-EOT
     mysql:
       storage:
-        storageClass: gp2
+        storageClass: ebs-sc
         size: 10Gi
     ingress:
       host: dev.baraziza.online
@@ -130,6 +167,8 @@ resource "helm_release" "bookie" {
 
   depends_on = [
     helm_release.cert_manager,
-    helm_release.ingress_nginx
+    helm_release.ingress_nginx,
+    kubernetes_storage_class.ebs_sc,
+    helm_release.aws_ebs_csi_driver
   ]
 }
