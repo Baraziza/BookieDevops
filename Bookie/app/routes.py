@@ -1,12 +1,12 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from app import db  # ✅ Use db from app/__init__.py
+from app import db  
 from app.models import Book
 
 app = Blueprint("app", __name__)
 
 @app.route('/')
 def home():
-    books = Book.query.all()  # ✅ Ensure queries are within Flask context
+    books = Book.query.all()  
     return render_template('book_list.html', books=books)
 
 @app.route('/add', methods=['GET', 'POST'])

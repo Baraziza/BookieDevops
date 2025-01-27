@@ -11,11 +11,10 @@ def create_app():
 
     db.init_app(app)
 
-    from app.models import Book  # Ensure models are imported
+    from app.models import Book  
     with app.app_context():
         db.create_all()
 
     from app.routes import app as routes_blueprint
-    app.register_blueprint(routes_blueprint, url_prefix="/")  # ✅ Ensures Blueprint routes work
-
+    app.register_blueprint(routes_blueprint, url_prefix="/")  
     return app
